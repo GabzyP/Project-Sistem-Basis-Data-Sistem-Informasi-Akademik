@@ -18,20 +18,41 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $result = mysqli_query($koneksi, $query);
     $user = mysqli_fetch_assoc($result);
 
-    if ($user) {
-        if (password_verify($password, $user['password'])) {
-            $_SESSION['user_id'] = $user['id'];
-            $_SESSION['nama']    = $user['nama_lengkap'] ?? $user['username']; 
-            $_SESSION['role']    = $user['role'];
+if ($user) {
+    if (password_verify($password, $user['password'])) {
 
-            header("Location: dashboard.php");
-            exit();
-        } else {
-            $error_msg = "Password salah!";
-        }
+        $_SESSION['user_id'] = $user['id'];
+        $_SESSION['nama']    = $user['nama_lengkap'] ?? $user['username']; 
+        $_SESSION['role']    = $user['role'];
+
+        $redirect_path = "dashboard.php";
+        
+        if ($user['role'] == 'mahasiswa') {
+            $query_mhs = "SELECT nim, nama FROM mahasiswa WHERE user_id = " . $user['id'];
+            $result_mhs = mysqli_query($koneksi, $query_mhs);
+            $data_mhs = mysqli_fetch_assoc($result_mhs);
+            
+            if ($data_mhs) {
+                $_SESSION['nim']  = $data_mhs['nim']; 
+                $_SESSION['nama'] = $data_mhs['nama']; 
+                $redirect_path = "dashboard_mahasiswa.php"; 
+            } else {
+                $error_msg = "Data mahasiswa tidak lengkap! Hubungi admin.";
+                goto end_auth; 
+            }
+        } 
+        
+        header("Location: $redirect_path");
+        exit();
+
     } else {
-        $error_msg = "Akun tidak ditemukan pada role $role!";
+        $error_msg = "Password salah!";
     }
+} else {
+    $error_msg = "Akun tidak ditemukan pada role $role!";
+}
+
+end_auth: 
 }
 ?>
 
